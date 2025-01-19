@@ -148,8 +148,9 @@
     </section>
 
     <script>
+        // Simulated user database
         const users = JSON.parse(localStorage.getItem('users')) || [];
-        let currentUser        = null;
+        let currentUser  = null;
         let inventory = JSON.parse(localStorage.getItem('inventory')) || [];
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -178,7 +179,7 @@
 
             if (user) {
                 alert('Login successful!');
-                currentUser        = user;
+                currentUser  = user;
                 inventory = JSON.parse(localStorage.getItem(`${user.companyName}-inventory`)) || [];
                 showInventoryPage();
                 updateInventoryTable();
@@ -228,7 +229,7 @@
         }
 
         function logOut() {
-            currentUser        = null;
+            currentUser  = null;
             inventory = [];
             document.getElementById('inventory-page').style.display = 'none';
             showLoginPage();
@@ -369,8 +370,8 @@
         }
 
         function saveInventory() {
-            if (currentUser      ) {
-                localStorage.setItem(`${currentUser      .companyName}-inventory`, JSON.stringify(inventory));
+            if (currentUser       ) {
+                localStorage.setItem(`${currentUser       .companyName}-inventory`, JSON.stringify(inventory));
                 alert('Inventory saved successfully!');
             } else {
                 alert('Error: No user logged in.');
