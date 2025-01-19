@@ -1,8 +1,227 @@
-inventory.push(item);
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Management System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        section {
+            padding: 20px;
+            text-align: center;
+        }
+        form {
+            display: inline-block;
+            text-align: left;
+        }
+        table {
+            width: 80%;
+            margin: 20px auto;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid #ccc;
+            text-align: center;
+        }
+        button {
+            margin: 5px;
+            padding: 5px 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Page -->
+    <section id="login-page">
+        <h1>Login</h1>
+        <form id="login-form">
+            <label for="login-company-name">Company Name:</label>
+            <input type="text" id="login-company-name" required><br>
+            <label for="login-password">Password:</label>
+            <input type="password" id="login-password" required><br>
+            <button type="submit">Login</button>
+        </form>
+        <p>Don't have an account? <a href="#" id="signup-link">Sign up</a></p>
+    </section>
+
+    <!-- Signup Page -->
+    <section id="signup-page" style="display: none;">
+        <h1>Sign Up</h1>
+        <form id="signup-form">
+            <label for="signup-company-name">Company Name:</label>
+            <input type="text" id="signup-company-name" required><br>
+            <label for="signup-password">Password:</label>
+            <input type="password" id="signup-password" required minlength="8"><br>
+            <button type="submit">Sign Up</button>
+        </form>
+        <p>Already have an account? <a href="#" id="login-link">Log in</a></p>
+    </section>
+
+    <!-- Inventory Page -->
+    <section id="inventory-page" style="display: none;">
+        <h1>Inventory Management System</h1>
+        <button id="logout-button">Log Out</button>
+        <section>
+            <h2>Add Item</h2>
+            <form id="item-form">
+                <label for="item-id">Item ID:</label>
+                <input type="text" id="item-id" required><br>
+                <label for="item-name">Item Name:</label>
+                <input type="text" id="item-name" required><br>
+                <label for="category">Category:</label>
+                <input type="text" id="category" required><br>
+                <label for="quantity">Quantity:</label>
+                <input type="number" id="quantity" required><br>
+                <label for="price">Price:</label>
+                <input type="number" step="0.01" id="price" required><br>
+                <button type="submit">Add Item</button>
+            </form>
+        </section>
+        <h2>Search Item</h2>
+        <form id="search-form">
+            <label for="search-id">Enter Item ID:</label>
+            <input type="text" id="search-id" required>
+            <button type="submit">Search</button>
+        </form>
+        <p id="search-result"></p>
+        <h2>Inventory</h2>
+        <table id="inventory-table">
+            <thead>
+                <tr>
+                    <th>Item ID</th>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Quantity</th>
+                    <th>Price (RM)</th>
+                    <th>Total Value (RM)</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <h2>Low Stock Items</h2>
+        <ul id="low-stock-list"></ul>
+        <h2>Total Inventory Value: <span id="total-inventory-value">RM 0.00</span></h2>
+        <button id="save-inventory-button">Save Inventory</button>
+    </section>
+
+    <script>
+        const users = JSON.parse(localStorage.getItem('users')) || [];
+        let currentUser = null;
+        let inventory = JSON.parse(localStorage.getItem('inventory')) || [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('login-form').addEventListener('submit', handleLogin);
+            document.getElementById('signup-form').addEventListener('submit', handleSignup);
+            document.getElementById('signup-link').addEventListener('click', showSignupPage);
+            document.getElementById('login-link').addEventListener('click', showLoginPage);
+            document.getElementById('item-form').addEventListener('submit', addItem);
+            document.getElementById('search-form').addEventListener('submit', searchItem);
+            document.getElementById('save-inventory-button').addEventListener('click', saveInventory);
+            document.getElementById('logout-button').addEventListener('click', logOut);
+        });
+
+        function handleLogin(event) {
+            event.preventDefault();
+            const companyName = document.getElementById('login-company-name').value.trim();
+            const password = document.getElementById('login-password').value;
+
+            const user = users.find(u => u.companyName === companyName && u.password === password);
+
+            if (user) {
+                alert('Login successful!');
+                currentUser = user;
+                inventory = JSON.parse(localStorage.getItem(`${user.companyName}-inventory`)) || [];
+                showInventoryPage();
+                updateInventoryTable();
+                updateTotalInventoryValue();
+                checkLowStock();
+            } else {
+                alert('Invalid credentials. Please try again.');
+            }
+        }
+
+        function handleSignup(event) {
+            event.preventDefault();
+            const companyName = document.getElementById('signup-company-name').value.trim();
+            const password = document.getElementById('signup-password').value;
+
+            if (users.some(u => u.companyName === companyName)) {
+                alert('Company name already exists. Please choose a different name.');
+                return;
+            }
+
+            users.push({ companyName, password });
+            localStorage.setItem('users', JSON.stringify(users));
+            alert('Signup successful! Please log in.');
+            showLoginPage();
+        }
+
+        function showSignupPage() {
+            document.getElementById('login-page').style.display = 'none';
+            document.getElementById('signup-page').style.display = 'block';
+        }
+
+        function showLoginPage() {
+            document.getElementById('signup-page').style.display = 'none';
+            document.getElementById('login-page').style.display = 'block';
+        }
+
+        function showInventoryPage() {
+            document.getElementById('login-page').style.display = 'none';
+            document.getElementById('signup-page').style.display = 'none';
+            document.getElementById('inventory-page').style.display = 'block';
+        }
+
+        function logOut() {
+            currentUser = null;
+            inventory = [];
+            document.getElementById('inventory-page').style.display = 'none';
+            showLoginPage();
+        }
+
+        function addItem(event) {
+            event.preventDefault();
+            const itemId = document.getElementById('item-id').value;
+            const itemName = document.getElementById('item-name').value;
+            const category = document.getElementById('category').value;
+            const quantity = parseInt(document.getElementById('quantity').value);
+            const price = parseFloat(document.getElementById('price').value);
+
+            const item = {
+                id: itemId,
+                name: itemName,
+                category: category,
+                quantity: quantity,
+                price: price,
+                totalValue: quantity * price
+            };
+
+            inventory.push(item);
             updateInventoryTable();
             checkLowStock();
             updateTotalInventoryValue();
             document.getElementById('item-form').reset();
+
+            // Show an alert with the item ID and other information
+            alert(`Item added successfully!\nItem ID: ${item.id}\nName: ${item.name}\nCategory: ${item.category}\nQuantity: ${item.quantity}\nPrice: RM ${item.price.toFixed(2)}\nTotal Value: RM ${item.totalValue.toFixed(2)}`);
+        }
+
+        function searchItem(event) {
+            event.preventDefault();
+            const searchId = document.getElementById('search-id').value;
+            const result = inventory.find(item => item.id === searchId);
+
+            if (result) {
+                document.getElementById('search-result').textContent = 
+                    `Item Found: Name: ${result.name}, Category: ${result.category}, Quantity: ${result.quantity}, Price: RM ${result.price.toFixed(2)}, Total Value: RM ${result.totalValue.toFixed(2)}`;
+            } else {
+                document.getElementById('search-result').textContent = 'Item not found.';
+            }
         }
 
         function updateInventoryTable() {
@@ -19,8 +238,6 @@ inventory.push(item);
                     <td>RM ${item.price.toFixed(2)}</td>
                     <td>RM ${item.totalValue.toFixed(2)}</td>
                     <td>
-                        <button onclick="sellItem(${index})">Sell</button>
-                        <button onclick="addStock(${index})">Add Stock</button>
                         <button onclick="removeItem(${index})">Remove</button>
                     </td>
                 `;
@@ -44,7 +261,7 @@ inventory.push(item);
             inventory.forEach(item => {
                 if (item.quantity < 10) {
                     const listItem = document.createElement('li');
-                    listItem.textContent = ${item.name} (Category: ${item.category}) - Quantity: ${item.quantity};
+                    listItem.textContent = `${item.name} (Category: ${item.category}) - Quantity: ${item.quantity}`;
                     lowStockList.appendChild(listItem);
                 }
             });
@@ -52,7 +269,7 @@ inventory.push(item);
 
         function updateTotalInventoryValue() {
             const totalValue = inventory.reduce((sum, item) => sum + item.totalValue, 0);
-            document.getElementById('total-inventory-value').textContent = RM ${totalValue.toFixed(2)};
+            document.getElementById('total-inventory-value').textContent = `RM ${totalValue.toFixed(2)}`;
         }
     </script>
 </body>
