@@ -5,88 +5,94 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inventory Management System</title>
     <link rel="stylesheet" href="styles.css">
-    <script src="script.js" defer></script>
-</head>
-<body>
-    <header>
-        <h1>Inventory Management System</h1>
-    </header>
-    <main>
-        <section id="form-section">
-            <h2>Add Item</h2>
-            <form id="item-form" style="display: flex; flex-direction: column; gap: 10px;">
-                <label for="item-id">1. Item ID (Format: PXXX):</label>
-                <input type="text" id="item-id" required pattern="P\d{3}" title="Must be in format PXXX, e.g., P001">
-                <label for="item-name">2. Item Name:</label>
-                <input type="text" id="item-name" required>
-                <label for="category">3. Category:</label>
-                <select id="category" required>
-                    <option value="electronics">Electronics</option>
-                    <option value="groceries">Groceries</option>
-                    <option value="clothing">Clothing</option>
-                    <option value="furniture">Furniture</option>
-                    <option value="mechanical">Mechanical</option>
-                </select>
-                <label for="quantity">4. Quantity:</label>
-                <input type="number" id="quantity" required min="1" step="1">
-                <label for="price">5. Price per Unit (RM):</label>
-                <input type="number" id="price" required min="0.01" step="0.01">
-                <button type="submit" style="margin-top: 10px;">Add Item</button>
-            </form>
-        </section>
+    <script defer>
+        // Simulated user data
+        const users = JSON.parse(localStorage.getItem('users')) || [];
+        let currentUser = null;
+        let inventory = JSON.parse(localStorage.getItem('inventory')) || [];
 
-        <section id="inventory-section">
-            <h2>Inventory</h2>
-            <table id="inventory-table" border="1">
-                <thead>
-                    <tr>
-                        <th>Item ID</th>
-                        <th>Item Name</th>
-                        <th>Category</th>
-                        <th>Quantity</th>
-                        <th>Price per Unit (RM)</th>
-                        <th>Total Value (RM)</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                </tbody>
-            </table>
-        </section>
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('login-form').addEventListener('submit', handleLogin);
+            document.getElementById('signup-form').addEventListener('submit', handleSignup);
+            document.getElementById('signup-link').addEventListener('click', showSignupPage);
+            document.getElementById('login-link').addEventListener('click', showLoginPage);
+            document.getElementById('item-form').addEventListener('submit', addItem);
+            document.getElementById('save-inventory-button').addEventListener('click', saveInventory);
+            document.getElementById('search-form').addEventListener('submit', searchItem);
 
-        <section id="low-stock-section">
-            <h2>Low Stock Alerts</h2>
-            <ul id="low-stock-list">
-            </ul>
-        </section>
+            if (currentUser) {
+                showInventoryPage();
+            }
+        });
 
-        <section id="search-section">
-            <h2>Search Item</h2>
-            <form id="search-form" style="display: flex; flex-direction: column; gap: 10px;">
-                <label for="search-id">Enter Item ID:</label>
-                <input type="text" id="search-id" required pattern="P\d{3}" title="Must be in format PXXX, e.g., P001">
-                <button type="submit" style="margin-top: 10px;">Search</button>
-            </form>
-            <div id="search-result" style="margin-top: 20px;">
-                <!-- Search result will be displayed here -->
-            </div>
-        </section>
+        function handleLogin(event) {
+            event.preventDefault();
 
-        <section id="summary-section">
-            <h2>Inventory Summary</h2>
-            <p>Total Inventory Value: <span id="total-inventory-value">RM 0.00</span></p>
-        </section>
-    </main>
+            const companyName = document.getElementById('login-company-name').value.trim();
+            const password = document.getElementById('login-password').value;
 
-    <footer>
-        <p>&copy; 2025 Inventory Management System</p>
-    </footer>
+            const user = users.find(u => u.companyName === companyName && u.password === password);
 
-    <script>
-        const inventory = [];
+            if (user) {
+                alert('Login successful!');
+                currentUser = user;
+                inventory = JSON.parse(localStorage.getItem(`${user.companyName}-inventory`)) || [];
+                showInventoryPage();
+                updateInventoryTable();
+                updateTotalInventoryValue();
+                checkLowStock();
+            } else {
+                alert('Invalid credentials. Please try again.');
+            }
+        }
 
-        document.getElementById('item-form').addEventListener('submit', function(e) {
-            e.preventDefault();
+        function handleSignup(event) {
+            event.preventDefault();
+
+            const companyName = document.getElementById('signup-company-name').value.trim();
+            const password = document.getElementById('signup-password').value;
+
+            if (!companyName || !password) {
+                alert('Please fill in all fields.');
+                return;
+            }
+
+            if (password.length < 8) {
+                alert('Password must be at least 8 characters long.');
+                return;
+            }
+
+            const userExists = users.some(u => u.companyName === companyName);
+
+            if (userExists) {
+                alert('Company name already exists. Please choose a different name.');
+                return;
+            }
+
+            users.push({ companyName, password });
+            localStorage.setItem('users', JSON.stringify(users));
+            alert('Signup successful! Please log in.');
+            showLoginPage();
+        }
+
+        function showSignupPage() {
+            document.getElementById('login-page').style.display = 'none';
+            document.getElementById('signup-page').style.display = 'block';
+        }
+
+        function showLoginPage() {
+            document.getElementById('signup-page').style.display = 'none';
+            document.getElementById('login-page').style.display = 'block';
+        }
+
+        function showInventoryPage() {
+            document.getElementById('login-page').style.display = 'none';
+            document.getElementById('signup-page').style.display = 'none';
+            document.getElementById('inventory-page').style.display = 'block';
+        }
+
+        function addItem(event) {
+            event.preventDefault();
 
             const itemId = document.getElementById('item-id').value;
             const itemName = document.getElementById('item-name').value;
@@ -107,8 +113,8 @@
             updateInventoryTable();
             checkLowStock();
             updateTotalInventoryValue();
-            this.reset();
-        });
+            document.getElementById('item-form').reset();
+        }
 
         function updateInventoryTable() {
             const tableBody = document.getElementById('inventory-table').querySelector('tbody');
@@ -133,16 +139,25 @@
             });
         }
 
+        function saveInventory() {
+            if (currentUser) {
+                localStorage.setItem(`${currentUser.companyName}-inventory`, JSON.stringify(inventory));
+                alert('Inventory saved successfully!');
+            } else {
+                alert('Error: No user logged in.');
+            }
+        }
+
         function sellItem(index) {
-            const sellQuantity = parseInt(prompt("Enter quantity to sell:"));
+            const sellQuantity = parseInt(prompt('Enter quantity to sell:'));
 
             if (!sellQuantity || sellQuantity <= 0) {
-                alert("Invalid quantity.");
+                alert('Invalid quantity.');
                 return;
             }
 
             if (sellQuantity > inventory[index].quantity) {
-                alert("Insufficient stock.");
+                alert('Insufficient stock.');
                 return;
             }
 
@@ -159,10 +174,10 @@
         }
 
         function addStock(index) {
-            const addQuantity = parseInt(prompt("Enter quantity to add:"));
+            const addQuantity = parseInt(prompt('Enter quantity to add:'));
 
             if (!addQuantity || addQuantity <= 0) {
-                alert("Invalid quantity.");
+                alert('Invalid quantity.');
                 return;
             }
 
@@ -187,12 +202,10 @@
 
             inventory.forEach(item => {
                 if (item.quantity < 10) {
-                    // Add item to the Low Stock list
                     const listItem = document.createElement('li');
                     listItem.textContent = `${item.name} (Category: ${item.category}) - Quantity: ${item.quantity}`;
                     lowStockList.appendChild(listItem);
 
-                    // Trigger an alert for items with quantity less than 10
                     alert(`Low Stock Alert: Item ID: ${item.id}, ${item.name} has only ${item.quantity} left!`);
                 }
             });
@@ -203,33 +216,128 @@
             document.getElementById('total-inventory-value').textContent = `RM ${totalValue.toFixed(2)}`;
         }
 
-        document.getElementById('search-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
+        function searchItem(event) {
+            event.preventDefault();
+
             const searchId = document.getElementById('search-id').value.trim();
-            const resultDiv = document.getElementById('search-result');
-            
-            const foundItem = inventory.find(item => item.id === searchId);
-            
-            if (foundItem) {
-                resultDiv.innerHTML = `
-                    <h3>Item Found</h3>
-                    <p><strong>Item ID:</strong> ${foundItem.id}</p>
-                    <p><strong>Item Name:</strong> ${foundItem.name}</p>
-                    <p><strong>Category:</strong> ${foundItem.category}</p>
-                    <p><strong>Quantity:</strong> ${foundItem.quantity}</p>
-                    <p><strong>Price per Unit:</strong> RM ${foundItem.price.toFixed(2)}</p>
-                    <p><strong>Total Value:</strong> RM ${foundItem.totalValue.toFixed(2)}</p>
-                `;
+            const result = inventory.find(item => item.id === searchId);
+
+            if (result) {
+                alert(`Item Found:\nID: ${result.id}\nName: ${result.name}\nCategory: ${result.category}\nQuantity: ${result.quantity}\nPrice: RM ${result.price.toFixed(2)}\nTotal Value: RM ${result.totalValue.toFixed(2)}`);
             } else {
-                resultDiv.innerHTML = `
-                    <h3>Item Not Found</h3>
-                    <p>No item found with ID "${searchId}".</p>
-                `;
+                alert('Item not found.');
             }
 
-            this.reset();
-        });
+            document.getElementById('search-form').reset();
+        }
     </script>
+</head>
+<body>
+    <!-- Login Page -->
+    <section id="login-page" style="display: block; text-align: center; padding: 20px;">
+        <h1>Login</h1>
+        <form id="login-form" style="display: inline-block; text-align: left;">
+            <label for="login-company-name">Company Name:</label>
+            <input type="text" id="login-company-name" required><br>
+            <label for="login-password">Password:</label>
+            <input type="password" id="login-password" required><br>
+            <button type="submit">Login</button>
+        </form>
+        <p>Don't have an account? <a href="#" id="signup-link">Sign up</a></p>
+    </section>
+
+    <!-- Signup Page -->
+    <section id="signup-page" style="display: none; text-align: center; padding: 20px;">
+        <h1>Sign Up</h1>
+        <form id="signup-form" style="display: inline-block; text-align: left;">
+            <label for="signup-company-name">Company Name:</label>
+            <input type="text" id="signup-company-name" required><br>
+            <label for="signup-password">Password:</label>
+            <input type="password" id="signup-password" required minlength="8" title="Password must be at least 8 characters long."><br>
+            <button type="submit">Sign Up</button>
+        </form>
+        <p>Already have an account? <a href="#" id="login-link">Log in</a></p>
+    </section>
+
+    <!-- Inventory Page -->
+    <section id="inventory-page" style="display: none;">
+        <header>
+            <h1>Inventory Management System</h1>
+        </header>
+        <main>
+            <section id="form-section">
+                <h2>Add Item</h2>
+                <form id="item-form" style="display: flex; flex-direction: column; gap: 10px;">
+                    <label for="item-id">1. Item ID (Format: PXXX):</label>
+                    <input type="text" id="item-id" required pattern="P\d{3}" title="Must be in format PXXX, e.g., P001">
+                    <label for="item-name">2. Item Name:</label>
+                    <input type="text" id="item-name" required>
+                    <label for="category">3. Category:</label>
+                    <select id="category" required>
+                        <option value="electronics">Electronics</option>
+                        <option value="groceries">Groceries</option>
+                        <option value="clothing">Clothing</option>
+                        <option value="furniture">Furniture</option>
+                        <option value="mechanical">Mechanical</option>
+                    </select>
+                    <label for="quantity">4. Quantity:</label>
+                    <input type="number" id="quantity" required min="1" step="1">
+                    <label for="price">5. Price per Unit (RM):</label>
+                    <input type="number" id="price" required min="0.01" step="0.01">
+                    <button type="submit" style="margin-top: 10px;">Add Item</button>
+                </form>
+            </section>
+
+            <section id="search-section">
+                <h2>Search Item</h2>
+                <form id="search-form" style="display: flex; flex-direction: column; gap: 10px;">
+                    <label for="search-id">Enter Item ID:</label>
+                    <input type="text" id="search-id" required pattern="P\d{3}" title="Must be in format PXXX, e.g., P001">
+                    <button type="submit" style="margin-top: 10px;">Search</button>
+                </form>
+            </section>
+
+            <section id="inventory-section">
+                <h2>Inventory</h2>
+                <table id="inventory-table" border="1">
+                    <thead>
+                        <tr>
+                            <th>Item ID</th>
+                            <th>Item Name</th>
+                            <th>Category</th>
+                            <th>Quantity</th>
+                            <th>Price per Unit (RM)</th>
+                            <th>Total Value (RM)</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Inventory items will be dynamically inserted here -->
+                    </tbody>
+                </table>
+                <button id="save-inventory-button" style="margin-top: 10px;">Save Inventory</button>
+            </section>
+
+            <section id="low-stock-section">
+                <h2>Low Stock Alerts</h2>
+                <ul id="low-stock-list">
+                    <!-- Low stock alerts will be dynamically inserted here -->
+                </ul>
+            </section>
+
+            <section id="summary-section">
+                <h2>Inventory Summary</h2>
+                <p>Total Inventory Value: <span id="total-inventory-value">RM 0.00</span></p>
+            </section>
+
+            <section>
+                <button onclick="showLoginPage()" style="margin-top: 20px;">Return to Login Page</button>
+            </section>
+        </main>
+
+        <footer>
+            <p>&copy; 2025 Inventory Management System</p>
+        </footer>
+    </section>
 </body>
 </html>
