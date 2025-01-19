@@ -83,7 +83,7 @@
             <form id="item-form">
                 <label for="item-id">Item ID:</label>
                 <input type="text" id="item-id" required><br>
-                <label for="item-name">Item Name:</label>
+                <label for="item-name">Item Name:</ ```html
                 <input type="text" id="item-name" required><br>
                 <label for="category">Category:</label>
                 <select id="category" required>
@@ -110,7 +110,6 @@
             <button type="submit">Sell Item</button>
         </form>
         
-        <!-- New Add Stock Section -->
         <h2>Add Stock</h2>
         <form id="add-stock-form">
             <label for="add-stock-item-id">Item ID:</label>
@@ -148,9 +147,8 @@
     </section>
 
     <script>
-        // Simulated user database
         const users = JSON.parse(localStorage.getItem('users')) || [];
-        let currentUser     = null;
+        let currentUser  = null;
         let inventory = [];
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -165,11 +163,6 @@
             document.getElementById('logout-button').addEventListener('click', logOut);
         });
 
-        function isValidItemId(itemId) {
-            const regex = /^P\d{3}$/; // Matches PXXX format
-            return regex.test(itemId);
-        }
-
         function handleLogin(event) {
             event.preventDefault();
             const companyName = document.getElementById('login-company-name').value.trim();
@@ -179,19 +172,28 @@
 
             if (user) {
                 alert('Login successful!');
-                currentUser     = user;
-                // Retrieve inventory for the logged-in user
+                currentUser  = user;
                 inventory = JSON.parse(localStorage.getItem(`${user.companyName}-inventory`)) || [];
                 showInventoryPage();
                 updateInventoryTable();
                 updateTotalInventoryValue();
                 checkLowStock();
-                // Clear login fields
-                document.getElementById('login-company-name').value = '';
-                document.getElementById('login-password').value = '';
+                startRealTimeUpdates(); // Start checking for updates
             } else {
                 alert('Invalid credentials. Please try again.');
             }
+        }
+
+        function startRealTimeUpdates() {
+            setInterval(() => {
+                const updatedInventory = JSON.parse(localStorage.getItem(`${currentUser .companyName}- inventory`)) || [];
+                if (JSON.stringify(updatedInventory) !== JSON.stringify(inventory)) {
+                    inventory = updatedInventory;
+                    updateInventoryTable();
+                    updateTotalInventoryValue();
+                    checkLowStock();
+                }
+            }, 5000); // Check for updates every 5 seconds
         }
 
         function handleSignup(event) {
@@ -199,20 +201,15 @@
             const companyName = document.getElementById('signup-company-name').value.trim();
             const password = document.getElementById('signup-password').value;
 
-            // Check if the company name already exists
             if (users.some(u => u.companyName === companyName)) {
                 alert('Company name already exists. Please choose a different name.');
                 return;
             }
 
-            // Add new user
             users.push({ companyName, password });
             localStorage.setItem('users', JSON.stringify(users));
             alert('Signup successful! Please log in.');
             showLoginPage();
-            // Clear signup fields
-            document.getElementById('signup-company-name').value = '';
-            document.getElementById('signup-password').value = '';
         }
 
         function showSignupPage() {
@@ -232,19 +229,10 @@
         }
 
         function logOut() {
-            currentUser     = null;
+            currentUser   = null;
             inventory = [];
             document.getElementById('inventory-page').style.display = 'none';
             showLoginPage();
-            resetForms(); // Reset all forms when logging out
-        }
-
-        function resetForms() {
-            // Reset all input fields in the forms
-            document.getElementById('item-form').reset();
-            document.getElementById('sell-form').reset();
-            document.getElementById('add-stock-form').reset();
-            document.getElementById('search-form').reset();
         }
 
         function addItem(event) {
@@ -277,7 +265,7 @@
                 updateInventoryTable();
                 checkLowStock();
                 updateTotalInventoryValue();
-                saveInventory(); // Automatically save inventory
+                saveInventory();
             }
 
             document.getElementById('item-form').reset();
@@ -291,13 +279,13 @@
             const item = inventory.find(item => item.id === itemId);
             if (item) {
                 if (item.quantity >= quantityToSell) {
-                    item.quantity -= quantityToSell; // Decrease quantity
-                    item.totalValue = item.quantity * item.price; // Update total value
+                    item.quantity -= quantityToSell;
+                    item.totalValue = item.quantity * item.price;
                     alert(`Sold ${quantityToSell} of ${item.name}. Remaining quantity: ${item.quantity}`);
                     updateInventoryTable();
                     checkLowStock();
                     updateTotalInventoryValue();
-                    saveInventory(); // Automatically save inventory
+                    saveInventory();
                 } else {
                     alert('Insufficient quantity available for sale.');
                 }
@@ -313,13 +301,13 @@
 
             const item = inventory.find(item => item.id === itemId);
             if (item) {
-                item.quantity += quantityToAdd; // Increase quantity
-                item.totalValue = item.quantity * item.price; // Update total value
+                item.quantity += quantityToAdd;
+                item.totalValue = item.quantity * item.price;
                 alert(`Added ${quantityToAdd} to ${item.name}. New quantity: ${item.quantity}`);
                 updateInventoryTable();
                 checkLowStock();
                 updateTotalInventoryValue();
-                saveInventory(); // Automatically save inventory
+                saveInventory();
             } else {
                 alert('Item not found.');
             }
@@ -333,7 +321,8 @@
             const result = inventory.find(item => item.id === searchId);
 
             if (result) {
-                document.getElementById('search-result').textContent = 
+                document.getElementById ```html
+                ('search-result').textContent = 
                     `Item Found: Name: ${result.name}, Category: ${result.category}, Quantity: ${result.quantity}, Price: RM ${result.price.toFixed(2)}, Total Value: RM ${result.totalValue.toFixed(2)}`;
             } else {
                 document.getElementById('search-result').textContent = 'Item not found.';
@@ -367,14 +356,14 @@
                 updateInventoryTable();
                 checkLowStock();
                 updateTotalInventoryValue();
-                saveInventory(); // Automatically save inventory
+                saveInventory();
                 alert('Item removed successfully!');
             }
         }
 
         function saveInventory() {
-            if (currentUser         ) {
-                localStorage.setItem(`${currentUser         .companyName}-inventory`, JSON.stringify(inventory));
+            if (currentUser ) {
+                localStorage.setItem(`${currentUser .companyName}-inventory`, JSON.stringify(inventory));
                 alert('Inventory saved successfully!');
             } else {
                 alert('Error: No user logged in.');
