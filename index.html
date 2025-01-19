@@ -73,7 +73,14 @@
                 <label for="item-name">Item Name:</label>
                 <input type="text" id="item-name" required><br>
                 <label for="category">Category:</label>
-                <input type="text" id="category" required><br>
+                <select id="category" required>
+                    <option value="" disabled selected>Select a category</option>
+                    <option value="Electronics">Electronics</option>
+                    <option value="Groceries">Groceries</option>
+                    <option value="Clothing">Clothing</option>
+                    <option value="Furniture">Furniture</option>
+                    <option value="Mechanical">Mechanical</option>
+                </select><br>
                 <label for="quantity">Quantity:</label>
                 <input type="number" id="quantity" required><br>
                 <label for="price">Price:</label>
@@ -81,6 +88,25 @@
                 <button type="submit">Add Item</button>
             </form>
         </section>
+        <h2>Sell Item</h2>
+        <form id="sell-form">
+            <label for="sell-item-id">Item ID:</label>
+            <input type="text" id="sell-item-id" required>
+            <label for="sell-quantity">Quantity to Sell:</label>
+            <input type="number" id="sell-quantity" required>
+            <button type="submit">Sell Item</button>
+        </form>
+        
+        <!-- New Add Stock Section -->
+        <h2>Add Stock</h2>
+        <form id="add-stock-form">
+            <label for="add-stock-item-id">Item ID:</label>
+            <input type="text" id="add-stock-item-id" required>
+            <label for="add-stock-quantity">Quantity to Add:</label>
+            <input type="number" id="add-stock-quantity" required>
+            <button type="submit">Add Stock</button>
+        </form>
+
         <h2>Search Item</h2>
         <form id="search-form">
             <label for="search-id">Enter Item ID:</label>
@@ -106,12 +132,11 @@
         <h2>Low Stock Items</h2>
         <ul id="low-stock-list"></ul>
         <h2>Total Inventory Value: <span id="total-inventory-value">RM 0.00</span></h2>
-        <button id="save-inventory-button">Save Inventory</button>
     </section>
 
     <script>
         const users = JSON.parse(localStorage.getItem('users')) || [];
-        let currentUser = null;
+        let currentUser    = null;
         let inventory = JSON.parse(localStorage.getItem('inventory')) || [];
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -120,10 +145,16 @@
             document.getElementById('signup-link').addEventListener('click', showSignupPage);
             document.getElementById('login-link').addEventListener('click', showLoginPage);
             document.getElementById('item-form').addEventListener('submit', addItem);
+            document.getElementById('sell-form').addEventListener('submit', sellItem);
+            document.getElementById('add-stock-form').addEventListener('submit', addStock);
             document.getElementById('search-form').addEventListener('submit', searchItem);
-            document.getElementById('save-inventory-button').addEventListener('click', saveInventory);
             document.getElementById('logout-button').addEventListener('click', logOut);
         });
+
+        function isValidItemId(itemId) {
+            const regex = /^P\d{3}$/; // Matches PXXX format
+            return regex.test(itemId);
+        }
 
         function handleLogin(event) {
             event.preventDefault();
@@ -134,7 +165,7 @@
 
             if (user) {
                 alert('Login successful!');
-                currentUser = user;
+                currentUser    = user;
                 inventory = JSON.parse(localStorage.getItem(`${user.companyName}-inventory`)) || [];
                 showInventoryPage();
                 updateInventoryTable();
@@ -178,7 +209,7 @@
         }
 
         function logOut() {
-            currentUser = null;
+            currentUser    = null;
             inventory = [];
             document.getElementById('inventory-page').style.display = 'none';
             showLoginPage();
@@ -192,23 +223,76 @@
             const quantity = parseInt(document.getElementById('quantity').value);
             const price = parseFloat(document.getElementById('price').value);
 
-            const item = {
-                id: itemId,
-                name: itemName,
-                category: category,
-                quantity: quantity,
-                price: price,
-                totalValue: quantity * price
-            };
+            if (!isValidItemId(itemId)) {
+                alert('Invalid Item ID format. Please use PXXX format (e.g., P001).');
+                return;
+            }
 
-            inventory.push(item);
-            updateInventoryTable();
-            checkLowStock();
-            updateTotalInventoryValue();
+            const existingItem = inventory.find(item => item.id === itemId);
+            if (existingItem) {
+                alert(`Item ID ${itemId} already exists. Please use the "Add Stock" section to add more quantity.`);
+            } else {
+                const item = {
+                    id: itemId,
+                    name: itemName,
+                    category: category,
+                    quantity: quantity,
+                    price: price,
+                    totalValue: quantity * price
+                };
+                inventory.push(item);
+                alert(`Item added successfully!\nItem ID: ${item.id}\nQuantity: ${item.quantity}`);
+                updateInventoryTable();
+                checkLowStock();
+                updateTotalInventoryValue();
+                saveInventory(); // Automatically save inventory
+            }
+
             document.getElementById('item-form').reset();
+        }
 
-            // Show an alert with the item ID and other information
-            alert(`Item added successfully!\nItem ID: ${item.id}\nName: ${item.name}\nCategory: ${item.category}\nQuantity: ${item.quantity}\nPrice: RM ${item.price.toFixed(2)}\nTotal Value: RM ${item.totalValue.toFixed(2)}`);
+        function sellItem(event) {
+            event.preventDefault();
+            const itemId = document.getElementById('sell-item-id').value;
+            const quantityToSell = parseInt(document.getElementById('sell-quantity').value);
+
+            const item = inventory.find(item => item.id === itemId);
+            if (item) {
+                if (item.quantity >= quantityToSell) {
+                    item.quantity -= quantityToSell; // Decrease quantity
+                    item.totalValue = item.quantity * item.price; // Update total value
+                    alert(`Sold ${quantityToSell} of ${item.name}. Remaining quantity: ${item.quantity}`);
+                    updateInventoryTable();
+                    checkLowStock();
+                    updateTotalInventoryValue();
+                    saveInventory(); // Automatically save inventory
+                } else {
+                    alert('Insufficient quantity available for sale.');
+                }
+            } else {
+                alert('Item not found.');
+            }
+        }
+
+        function addStock(event) {
+            event.preventDefault();
+            const itemId = document.getElementById('add-stock-item-id').value;
+            const quantityToAdd = parseInt(document.getElementById('add-stock-quantity').value);
+
+            const item = inventory.find(item => item.id === itemId);
+            if (item) {
+                item.quantity += quantityToAdd; // Increase quantity
+                item.totalValue = item.quantity * item.price; // Update total value
+                alert(`Added ${quantityToAdd} to ${item.name}. New quantity: ${item.quantity}`);
+                updateInventoryTable();
+                checkLowStock();
+                updateTotalInventoryValue();
+                saveInventory(); // Automatically save inventory
+            } else {
+                alert('Item not found.');
+            }
+
+            document.getElementById('add-stock-form').reset();
         }
 
         function searchItem(event) {
@@ -245,9 +329,20 @@
             });
         }
 
+        function removeItem(index) {
+            if (confirm('Are you sure you want to remove this item?')) {
+                inventory.splice(index, 1);
+                updateInventoryTable();
+                checkLowStock();
+                updateTotalInventoryValue();
+                saveInventory(); // Automatically save inventory
+                alert('Item removed successfully!');
+            }
+        }
+
         function saveInventory() {
-            if (currentUser) {
-                localStorage.setItem(`${currentUser.companyName}-inventory`, JSON.stringify(inventory));
+            if (currentUser ) {
+                localStorage.setItem(`${currentUser .companyName}-inventory`, JSON.stringify(inventory));
                 alert('Inventory saved successfully!');
             } else {
                 alert('Error: No user logged in.');
@@ -261,7 +356,7 @@
             inventory.forEach(item => {
                 if (item.quantity < 10) {
                     const listItem = document.createElement('li');
-                    listItem.textContent = `${item.name} (Category: ${item.category}) - Quantity: ${item.quantity}`;
+                    listItem.textContent = `Item ID: ${item.id}, Name: ${item.name} - Quantity: ${item.quantity}`;
                     lowStockList.appendChild(listItem);
                 }
             });
