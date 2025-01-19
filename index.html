@@ -9,10 +9,15 @@
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
+            background: linear-gradient(to right, #ff7e5f, #feb47b); /* Gradient from coral to peach */
+            color: black; /* Set text color to black */
         }
         section {
             padding: 20px;
             text-align: center;
+            background-color: rgba(255, 255, 255, 0.9); /* White background with transparency */
+            border-radius: 8px; /* Rounded corners */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Subtle shadow */
         }
         form {
             display: inline-block;
@@ -31,6 +36,14 @@
         button {
             margin: 5px;
             padding: 5px 10px;
+            background-color: #2575fc; /* Button color */
+            color: white; /* Button text color */
+            border: none; /* Remove border */
+            border-radius: 5px; /* Rounded corners for buttons */
+            cursor: pointer; /* Pointer cursor on hover */
+        }
+        button:hover {
+            background-color: #6a11cb; /* Change button color on hover */
         }
     </style>
 </head>
@@ -136,7 +149,7 @@
 
     <script>
         const users = JSON.parse(localStorage.getItem('users')) || [];
-        let currentUser    = null;
+        let currentUser        = null;
         let inventory = JSON.parse(localStorage.getItem('inventory')) || [];
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -165,12 +178,15 @@
 
             if (user) {
                 alert('Login successful!');
-                currentUser    = user;
+                currentUser        = user;
                 inventory = JSON.parse(localStorage.getItem(`${user.companyName}-inventory`)) || [];
                 showInventoryPage();
                 updateInventoryTable();
                 updateTotalInventoryValue();
                 checkLowStock();
+                // Clear login fields
+                document.getElementById('login-company-name').value = '';
+                document.getElementById('login-password').value = '';
             } else {
                 alert('Invalid credentials. Please try again.');
             }
@@ -190,6 +206,9 @@
             localStorage.setItem('users', JSON.stringify(users));
             alert('Signup successful! Please log in.');
             showLoginPage();
+            // Clear signup fields
+            document.getElementById('signup-company-name').value = '';
+            document.getElementById('signup-password').value = '';
         }
 
         function showSignupPage() {
@@ -209,10 +228,19 @@
         }
 
         function logOut() {
-            currentUser    = null;
+            currentUser        = null;
             inventory = [];
             document.getElementById('inventory-page').style.display = 'none';
             showLoginPage();
+            resetForms(); // Reset all forms when logging out
+        }
+
+        function resetForms() {
+            // Reset all input fields in the forms
+            document.getElementById('item-form').reset();
+            document.getElementById('sell-form').reset();
+            document.getElementById('add-stock-form').reset();
+            document.getElementById('search-form').reset();
         }
 
         function addItem(event) {
@@ -341,8 +369,8 @@
         }
 
         function saveInventory() {
-            if (currentUser ) {
-                localStorage.setItem(`${currentUser .companyName}-inventory`, JSON.stringify(inventory));
+            if (currentUser      ) {
+                localStorage.setItem(`${currentUser      .companyName}-inventory`, JSON.stringify(inventory));
                 alert('Inventory saved successfully!');
             } else {
                 alert('Error: No user logged in.');
