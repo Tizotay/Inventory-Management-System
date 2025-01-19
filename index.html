@@ -3,55 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Personal Budget Tracker</title>
+    <title>Inventory Management System</title>
     <link rel="stylesheet" href="styles.css">
     <script src="script.js" defer></script>
 </head>
 <body>
     <header>
-        <h1>Personal Budget Tracker</h1>
+        <h1>Inventory Management System</h1>
     </header>
     <main>
         <section id="form-section">
-            <h2>Add Transaction</h2>
-            <form id="transaction-form">
-                <label for="type">Type:</label>
-                <select id="type" required>
-                    <option value="income">Income</option>
-                    <option value="expense">Expense</option>
-                </select>
-                <label for="category">Category:</label>
+            <h2>Add Item</h2>
+            <form id="item-form" style="display: flex; flex-direction: column; gap: 10px;">
+                <label for="item-id">1. Item ID (Format: PXXX):</label>
+                <input type="text" id="item-id" required pattern="P\d{3}" title="Must be in format PXXX, e.g., P001">
+                <label for="item-name">2. Item Name:</label>
+                <input type="text" id="item-name" required>
+                <label for="category">3. Category:</label>
                 <select id="category" required>
-                    <option value="salary">Salary</option>
+                    <option value="electronics">Electronics</option>
                     <option value="groceries">Groceries</option>
-                    <option value="entertainment">Entertainment</option>
-                    <option value="bills">Bills</option>
+                    <option value="clothing">Clothing</option>
+                    <option value="furniture">Furniture</option>
+                    <option value="mechanical">Mechanical</option>
                 </select>
-                <label for="amount">Amount (RM):</label>
-                <input type="number" id="amount" required min="0.01" step="0.01">
-                <label for="date">Date:</label>
-                <input type="date" id="date" required>
-                <button type="submit">Add Transaction</button>
+                <label for="quantity">4. Quantity:</label>
+                <input type="number" id="quantity" required min="1" step="1">
+                <label for="price">5. Price per Unit (RM):</label>
+                <input type="number" id="price" required min="0.01" step="0.01">
+                <button type="submit" style="margin-top: 10px;">Add Item</button>
             </form>
         </section>
 
-        <section id="summary-section">
-            <h2>Summary</h2>
-            <p>Total Income: <span id="total-income">RM 0.00</span></p>
-            <p>Total Expenses: <span id="total-expenses">RM 0.00</span></p>
-            <p>Savings: <span id="savings">RM 0.00</span></p>
-            <canvas id="spending-chart" width="400" height="200"></canvas>
-        </section>
-
-        <section id="transactions-section">
-            <h2>Transactions</h2>
-            <table id="transactions-table">
+        <section id="inventory-section">
+            <h2>Inventory</h2>
+            <table id="inventory-table" border="1">
                 <thead>
                     <tr>
-                        <th>Type</th>
+                        <th>Item ID</th>
+                        <th>Item Name</th>
                         <th>Category</th>
-                        <th>Amount (RM)</th>
-                        <th>Date</th>
+                        <th>Quantity</th>
+                        <th>Price per Unit (RM)</th>
+                        <th>Total Value (RM)</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -60,15 +54,182 @@
             </table>
         </section>
 
-        <section id="report-section">
-            <h2>Monthly Report</h2>
-            <button id="generate-report">Generate Report</button>
-            <div id="report-output"></div>
+        <section id="low-stock-section">
+            <h2>Low Stock Alerts</h2>
+            <ul id="low-stock-list">
+            </ul>
+        </section>
+
+        <section id="search-section">
+            <h2>Search Item</h2>
+            <form id="search-form" style="display: flex; flex-direction: column; gap: 10px;">
+                <label for="search-id">Enter Item ID:</label>
+                <input type="text" id="search-id" required pattern="P\d{3}" title="Must be in format PXXX, e.g., P001">
+                <button type="submit" style="margin-top: 10px;">Search</button>
+            </form>
+            <div id="search-result" style="margin-top: 20px;">
+                <!-- Search result will be displayed here -->
+            </div>
+        </section>
+
+        <section id="summary-section">
+            <h2>Inventory Summary</h2>
+            <p>Total Inventory Value: <span id="total-inventory-value">RM 0.00</span></p>
         </section>
     </main>
 
     <footer>
-        <p>&copy; 2025 Personal Budget Tracker</p>
+        <p>&copy; 2025 Inventory Management System</p>
     </footer>
+
+    <script>
+        const inventory = [];
+
+        document.getElementById('item-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const itemId = document.getElementById('item-id').value;
+            const itemName = document.getElementById('item-name').value;
+            const category = document.getElementById('category').value;
+            const quantity = parseInt(document.getElementById('quantity').value);
+            const price = parseFloat(document.getElementById('price').value);
+
+            const item = {
+                id: itemId,
+                name: itemName,
+                category: category,
+                quantity: quantity,
+                price: price,
+                totalValue: quantity * price
+            };
+
+            inventory.push(item);
+            updateInventoryTable();
+            checkLowStock();
+            updateTotalInventoryValue();
+            this.reset();
+        });
+
+        function updateInventoryTable() {
+            const tableBody = document.getElementById('inventory-table').querySelector('tbody');
+            tableBody.innerHTML = '';
+
+            inventory.forEach((item, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.id}</td>
+                    <td>${item.name}</td>
+                    <td>${item.category}</td>
+                    <td>${item.quantity}</td>
+                    <td>RM ${item.price.toFixed(2)}</td>
+                    <td>RM ${item.totalValue.toFixed(2)}</td>
+                    <td>
+                        <button onclick="sellItem(${index})">Sell</button>
+                        <button onclick="addStock(${index})">Add Stock</button>
+                        <button onclick="removeItem(${index})">Remove</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        function sellItem(index) {
+            const sellQuantity = parseInt(prompt("Enter quantity to sell:"));
+
+            if (!sellQuantity || sellQuantity <= 0) {
+                alert("Invalid quantity.");
+                return;
+            }
+
+            if (sellQuantity > inventory[index].quantity) {
+                alert("Insufficient stock.");
+                return;
+            }
+
+            inventory[index].quantity -= sellQuantity;
+            inventory[index].totalValue = inventory[index].quantity * inventory[index].price;
+
+            if (inventory[index].quantity === 0) {
+                inventory.splice(index, 1);
+            }
+
+            updateInventoryTable();
+            checkLowStock();
+            updateTotalInventoryValue();
+        }
+
+        function addStock(index) {
+            const addQuantity = parseInt(prompt("Enter quantity to add:"));
+
+            if (!addQuantity || addQuantity <= 0) {
+                alert("Invalid quantity.");
+                return;
+            }
+
+            inventory[index].quantity += addQuantity;
+            inventory[index].totalValue = inventory[index].quantity * inventory[index].price;
+
+            updateInventoryTable();
+            checkLowStock();
+            updateTotalInventoryValue();
+        }
+
+        function removeItem(index) {
+            inventory.splice(index, 1);
+            updateInventoryTable();
+            checkLowStock();
+            updateTotalInventoryValue();
+        }
+
+        function checkLowStock() {
+            const lowStockList = document.getElementById('low-stock-list');
+            lowStockList.innerHTML = '';
+
+            inventory.forEach(item => {
+                if (item.quantity < 10) {
+                    // Add item to the Low Stock list
+                    const listItem = document.createElement('li');
+                    listItem.textContent = `${item.name} (Category: ${item.category}) - Quantity: ${item.quantity}`;
+                    lowStockList.appendChild(listItem);
+
+                    // Trigger an alert for items with quantity less than 10
+                    alert(`Low Stock Alert: Item ID: ${item.id}, ${item.name} has only ${item.quantity} left!`);
+                }
+            });
+        }
+
+        function updateTotalInventoryValue() {
+            const totalValue = inventory.reduce((sum, item) => sum + item.totalValue, 0);
+            document.getElementById('total-inventory-value').textContent = `RM ${totalValue.toFixed(2)}`;
+        }
+
+        document.getElementById('search-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const searchId = document.getElementById('search-id').value.trim();
+            const resultDiv = document.getElementById('search-result');
+            
+            const foundItem = inventory.find(item => item.id === searchId);
+            
+            if (foundItem) {
+                resultDiv.innerHTML = `
+                    <h3>Item Found</h3>
+                    <p><strong>Item ID:</strong> ${foundItem.id}</p>
+                    <p><strong>Item Name:</strong> ${foundItem.name}</p>
+                    <p><strong>Category:</strong> ${foundItem.category}</p>
+                    <p><strong>Quantity:</strong> ${foundItem.quantity}</p>
+                    <p><strong>Price per Unit:</strong> RM ${foundItem.price.toFixed(2)}</p>
+                    <p><strong>Total Value:</strong> RM ${foundItem.totalValue.toFixed(2)}</p>
+                `;
+            } else {
+                resultDiv.innerHTML = `
+                    <h3>Item Not Found</h3>
+                    <p>No item found with ID "${searchId}".</p>
+                `;
+            }
+
+            this.reset();
+        });
+    </script>
 </body>
 </html>
