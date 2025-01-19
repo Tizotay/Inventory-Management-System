@@ -149,7 +149,7 @@
 
     <script>
         const users = JSON.parse(localStorage.getItem('users')) || [];
-        let currentUser        = null;
+        let currentUser  = null;
         let inventory = JSON.parse(localStorage.getItem('inventory')) || [];
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -162,6 +162,16 @@
             document.getElementById('add-stock-form').addEventListener('submit', addStock);
             document.getElementById('search-form').addEventListener('submit', searchItem);
             document.getElementById('logout-button').addEventListener('click', logOut);
+
+            // Listen for storage changes
+            window.addEventListener('storage', (event) => {
+                if (event.key && event.key.startsWith(`${currentUser ?.companyName}-inventory`)) {
+                    inventory = JSON.parse(event.newValue) || [];
+                    updateInventoryTable();
+                    updateTotalInventoryValue();
+                    checkLowStock();
+                }
+            });
         });
 
         function isValidItemId(itemId) {
@@ -178,7 +188,7 @@
 
             if (user) {
                 alert('Login successful!');
-                currentUser        = user;
+                currentUser  = user;
                 inventory = JSON.parse(localStorage.getItem(`${user.companyName}-inventory`)) || [];
                 showInventoryPage();
                 updateInventoryTable();
@@ -197,11 +207,13 @@
             const companyName = document.getElementById('signup-company-name').value.trim();
             const password = document.getElementById('signup-password').value;
 
-            if (users.some(u => u.companyName === companyName)) {
+            // Check if the company name already exists
+            if (users.some(u => u.companyName.toLowerCase() === companyName.toLowerCase())) {
                 alert('Company name already exists. Please choose a different name.');
                 return;
             }
 
+            // Add new user
             users.push({ companyName, password });
             localStorage.setItem('users', JSON.stringify(users));
             alert('Signup successful! Please log in.');
@@ -228,7 +240,7 @@
         }
 
         function logOut() {
-            currentUser        = null;
+            currentUser  = null;
             inventory = [];
             document.getElementById('inventory-page').style.display = 'none';
             showLoginPage();
@@ -369,8 +381,8 @@
         }
 
         function saveInventory() {
-            if (currentUser      ) {
-                localStorage.setItem(`${currentUser      .companyName}-inventory`, JSON.stringify(inventory));
+            if (currentUser ) {
+                localStorage.setItem(`${currentUser .companyName}-inventory`, JSON.stringify(inventory));
                 alert('Inventory saved successfully!');
             } else {
                 alert('Error: No user logged in.');
